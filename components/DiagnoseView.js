@@ -114,6 +114,8 @@ const DIAG_CSS = `
 .dg-ba .after{border:1px solid #cfe8d8;background:#f3faf5}
 .dg-ba .after small{color:#1f7a45}
 .dg-ba .after span{font-size:13px;color:var(--muted)}
+.dg-ref{display:inline-block;vertical-align:middle;font-size:11px;font-weight:800;color:#8a5a00;background:#fdf3dc;border-radius:5px;padding:2px 7px;margin-left:6px}
+.dg-refnote{font-size:12px;color:var(--muted);margin:8px 0 0}
 .dg-plan{list-style:none;counter-reset:s;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
 .dg-plan li{counter-increment:s;border-left:3px solid var(--accent);padding:6px 0 6px 14px;display:flex;flex-direction:column;gap:3px;font-size:14px}
 .dg-plan li b:before{content:counter(s) ". ";color:var(--accent)}
@@ -865,10 +867,37 @@ export default function DiagnoseView({ diag }) {
         </>
       )}
 
+      {(() => {
+        const da = (d.areas || []).find((a) => a.key === "detail");
+        if (!da?.findings?.length) return null;
+        return (
+          <>
+            <h2>🔎 상세페이지 분석 <span className="dg-ref">참고용</span></h2>
+            <p className="rp-note" style={{ marginTop: 0 }}>
+              {d.detailBasis || "상세페이지"} 기준 · {da.score}/{da.max}점{da.label.includes("글 기준") ? " · 이미지를 못 받아 글자만 보고 판단했어요. 상세정보를 펼치고 끝까지 내린 뒤 버튼을 누르면 이미지까지 분석해요." : ""}
+            </p>
+            <div className="dg-find">
+              {da.findings.map((f, i) => (
+                <div className="dg-f" key={i}>
+                  <span className="b">
+                    <Badge level={f.level} />
+                  </span>
+                  <span className="t">{f.title}</span>
+                  {f.detail && <span className="d">{L(f.detail)}</span>}
+                  {f.fix && <span className="x">{L(f.fix)}</span>}
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      })()}
+
       {d.detailPlan?.length > 0 && (
         <>
-          <h2>🧩 상세페이지 개선 구성안</h2>
-          <p className="rp-note" style={{ marginTop: 0 }}>위에서부터 이 순서로 보여주면 손님이 스크롤하면서 구매 이유를 차례로 얻어요.</p>
+          <h2>🧩 추천 상세페이지 구성안 <span className="dg-ref">참고용</span></h2>
+          <p className="rp-note" style={{ marginTop: 0 }}>
+            {d.detailBasis ? `${d.detailBasis} 기준으로 짠 기획안이에요. ` : ""}위에서부터 이 순서로 보여주면 손님이 스크롤하면서 구매 이유를 차례로 얻어요.
+          </p>
           <ol className="dg-plan">
             {d.detailPlan.map((p, i) => (
               <li key={i}>
@@ -879,6 +908,7 @@ export default function DiagnoseView({ diag }) {
               </li>
             ))}
           </ol>
+          <p className="dg-refnote">※ 참고용 기획안이에요. 실제 제작할 때는 상품 특성·브랜드 분위기·촬영 여건에 맞게 순서와 문구를 조정하세요.</p>
         </>
       )}
 

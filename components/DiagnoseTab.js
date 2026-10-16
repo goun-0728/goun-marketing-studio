@@ -81,6 +81,21 @@ function SearchPreview({ sx, storeName }) {
   );
 }
 
+// AI 답이 없을 때도 구성안이 빠지지 않게: 어느 상품에나 맞는 기본 구성 (참고용)
+function basicDetailPlan(product, px = {}) {
+  const praise = px.reviewPraise?.[0];
+  const issue = px.reviewIssues?.[0];
+  return [
+    { section: "첫 화면", now: "", todo: "상품이 무엇이고 왜 사야 하는지 한 줄 + 핵심 장점 3가지를 큰 글씨로", example: "" },
+    { section: "구매 이유", now: "", todo: "손님이 겪는 불편 → 이 상품으로 해결되는 장면을 사진과 짧은 문장으로", example: praise ? `손님 후기: "${praise}"` : "" },
+    { section: "차별점", now: "", todo: "비슷한 상품과 다른 점을 비교표나 숫자(용량·소재·원산지)로", example: "" },
+    { section: "사용·조리 방법", now: "", todo: "처음 쓰는 손님도 따라 할 수 있게 단계별 사진 3~4컷", example: "" },
+    { section: "불만 미리 안내", now: "", todo: issue ? `리뷰에 나온 '${issue}'에 대한 안내를 미리 넣기` : "자주 생기는 오해(사이즈·보관·주의사항)를 미리 안내", example: "" },
+    { section: "신뢰 정보", now: "", todo: "후기 하이라이트·인증·원산지·제조 과정", example: "" },
+    { section: "구성·배송·교환", now: "", todo: "구성품, 출고일, 배송비 조건, 교환·환불을 표로", example: "" },
+  ];
+}
+
 // 분석 시각 표시: "10. 12. 16:58" / "3분 전"
 const stamp = (iso) => {
   const d = new Date(iso);
@@ -486,8 +501,12 @@ export default function DiagnoseTab({ store }) {
           }
         : null;
       const productInfo = { 판매가: +f.price, 배송비: f.shipFee, 리뷰: f.reviews, 평점: f.rating, 옵션: px.options, 혜택: px.benefits, 표시: px.badges, 주장문구: px.claims, 표기: px.notices, 리뷰불만: px.reviewIssues, 리뷰칭찬: px.reviewPraise, 식품: px.isFood };
+      // 상세페이지 글자: '상세정보' 다음 부분 (없으면 화면 글자 중간) — 이미지가 없어도 상세페이지를 평가하도록
+      const pageText = String(product.text || "");
+      const dIdx = pageText.search(/상세정보|상품정보|상세 정보|상품 상세/);
+      const detailText = (dIdx >= 0 ? pageText.slice(dIdx, dIdx + 6000) : pageText.slice(2000, 8000)).trim();
       const [mainRes, plusRes] = await Promise.allSettled([
-        callAI("diagnose", storeForAI, { productName: f.product, keyword, summary, hasImages: imgs.length > 0 }, [], imgs),
+        callAI("diagnose", storeForAI, { productName: f.product, keyword, summary, hasImages: imgs.length > 0, detailText }, [], imgs),
         callAI("diagnose_plus", storeForAI, { productName: f.product, keyword, summary, product: productInfo, competitors, agency: agency.name, ad: adForAI }),
       ]);
       let ai = {};
@@ -509,7 +528,7 @@ export default function DiagnoseTab({ store }) {
         }
       }
       if (ai.detail?.findings?.length) {
-        areas.splice(3, 0, { key: "detail", label: "상세페이지", max: 15, score: Math.max(0, Math.min(15, Math.round(Number(ai.detail.score) || 0))), findings: ai.detail.findings });
+        areas.splice(3, 0, { key: "detail", label: imgs.length ? "상세페이지" : "상세페이지 (글 기준)", max: 15, score: Math.max(0, Math.min(15, Math.round(Number(ai.detail.score) || 0))), findings: ai.detail.findings });
       }
 
       const sci = makeSci([...(plus.adPlan?.negatives || []), ...(extra.dropped || [])]);
@@ -567,7 +586,8 @@ export default function DiagnoseTab({ store }) {
         competitors,
         currentTitle: f.product,
         titleOptions: (plus.titleOptions || []).slice(0, 3),
-        detailPlan: (plus.detailPlan || []).slice(0, 7),
+        detailPlan: (plus.detailPlan?.length ? plus.detailPlan : basicDetailPlan(f.product, px)).slice(0, 8),
+        detailBasis: imgs.length ? `상세 이미지 ${imgs.length}장` : "상세페이지 글자",
         reviewReplies: (plus.reviewReplies || []).slice(0, 3),
         reviews: {
           issues: px.reviewIssues || [],
