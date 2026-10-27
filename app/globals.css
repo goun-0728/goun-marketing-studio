@@ -46,7 +46,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .topbar .spacer { flex: 1; }
 .keybtn { border: 1px solid #444; background: transparent; color: #ddd; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
 
-.wrap { display: grid; grid-template-columns: 330px 1fr; gap: 20px; padding: 20px; max-width: 1440px; margin: 0 auto; }
+.wrap { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; max-width: 1180px; margin: 0 auto; }
 @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; padding: 12px; } .tabs { margin-left: 0; } .topbar { flex-wrap: wrap; } }
 
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
@@ -210,3 +210,9 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 .buzz-gap { color: var(--ok) !important; font-weight: 700; }
 .buzz details summary { cursor: pointer; color: var(--muted); }
 .buzz details ol { margin: 6px 0 0; padding-left: 20px; }
+
+.custbar-wrap { margin-bottom: 14px; }
+.custbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.custbar select { width: auto; min-width: 220px; max-width: 100%; }
+.custpanel { margin-top: 8px; }
+.custgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 14px; }

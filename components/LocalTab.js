@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { loadImports, saveImport, searchKeyword } from "@/lib/importer";
 import { callAI, copyText, fetchLocal, makeShareLink } from "@/lib/client";
 import { encodeReport } from "@/lib/report";
+import { upsertStoreCard } from "@/lib/storeCard";
 import { localBundle, localForAI } from "@/lib/local";
 import { logWork } from "@/lib/report";
 import { outKey, usePersistentState } from "@/lib/usePersist";
@@ -119,6 +120,21 @@ export default function LocalTab({ store }) {
       const next = { id: Date.now(), ...input, budget: f.budget, data, ai, placeAt: place ? new Date(place.at).toLocaleDateString("ko-KR") : null, agency: agency.name || "고운기획", contact: agency.contact || "", at: now.toISOString(), date: `${now.toLocaleDateString("ko-KR")} ${now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })}` };
       setRes(next);
       setHist((h) => [next, ...(Array.isArray(h) ? h : []).filter((x) => x.id !== next.id)].slice(0, 5));
+      // 고객 카드 자동 저장 → 홍보 카피·카드뉴스 등 다른 탭이 이 가게 정보를 씀
+      const prices = (px?.menu || []).map((m) => Number(m.price)).filter((x) => x > 0);
+      upsertStoreCard(
+        {
+          name: input.name,
+          category: px?.category || input.biz,
+          channel: "오프라인 매장",
+          location: px?.address || input.area,
+          products: input.menu,
+          price: prices.length ? `${Math.min(...prices).toLocaleString()}~${Math.max(...prices).toLocaleString()}원` : "",
+          strengths: (ai?.strengths || []).join(", "),
+          link: `네이버에서 '${input.name}' 검색`,
+        },
+        { fromName: store.name, carry: ["local", "local_input"], values: { local: next, local_input: f } }
+      );
       logWork(store.name || input.name, "상담", `오프라인 가게 분석·전략 (${data.query})`);
     } catch (e) {
       setErr(e.message);

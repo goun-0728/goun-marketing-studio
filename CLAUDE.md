@@ -17,7 +17,7 @@
 | ① 분석 엔진 | `lib/bookmarklet.js`(화면 수집), `lib/importer.js`, `lib/naver.js`(검색광고·HUB API), `lib/diagnose.js`(점수), `lib/science.js`(데이터 과학), `lib/prompts.js`(AI 지시문), `app/api/*` |
 | ② 분석 보고서 화면 | `components/DiagnoseView.js`, `components/DiagnoseTab.js`, `lib/exporter.js`, `lib/naming.js`, `app/d/*`, `app/r/*` |
 | ③ 제작 도구 | `components/CopyTab.js`, `CardNewsTab.js`, `ShortsTab.js`, `LocalTab.js`·`LocalView.js`(오프라인 가게, 구 전략 리포트 자리), `lib/local.js`, `lib/buzz.js`, `lib/cardnews.js`, `lib/shorts.js`, `lib/draw.js`, `lib/photoStore.js` |
-| ④ 공통 | `app/page.js`, `components/StoreProfile.js`, `lib/storage.js`, `lib/client.js`, `lib/usePersist.js` |
+| ④ 공통 | `app/page.js`, `components/StoreProfile.js`(위쪽 고객 카드 줄), `lib/storeCard.js`(분석 후 고객 카드 자동 저장), `lib/storage.js`, `lib/client.js`, `lib/usePersist.js` |
 
 ## 확인
 - `npm run build`로 빌드 확인 후 커밋.

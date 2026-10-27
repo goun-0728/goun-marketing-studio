@@ -38,6 +38,7 @@ export default function StoreProfile({ store, setStore }) {
   const [current, setCurrent] = useState("");
   const [msg, setMsg] = useState("");
   const [backupDays, setBackupDays] = useState(null);
+  const [open, setOpen] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +51,23 @@ export default function StoreProfile({ store, setStore }) {
       setCurrent(last);
       setStore({ ...EMPTY_STORE, ...p[last] });
     }
+  }, [setStore]);
+
+  // 분석이 끝나 고객 카드가 자동 저장되면 그 고객으로 전환
+  useEffect(() => {
+    const onSel = (e) => {
+      const p = loadProfiles();
+      setProfiles(p);
+      const key = e.detail?.name;
+      if (key && p[key]) {
+        setCurrent(key);
+        setStore({ ...EMPTY_STORE, ...p[key] });
+        setMsg(e.detail.created ? `고객 카드 '${key}'를 만들었어요` : `고객 카드 '${key}'에 반영했어요`);
+        setTimeout(() => setMsg(""), 3000);
+      }
+    };
+    window.addEventListener("gms-store-select", onSel);
+    return () => window.removeEventListener("gms-store-select", onSel);
   }, [setStore]);
 
   const persist = (next) => {
@@ -116,13 +134,11 @@ export default function StoreProfile({ store, setStore }) {
   const count = Object.keys(profiles).length;
 
   return (
-    <div className="panel">
-      <h2>🏪 스토어 정보</h2>
-      <p className="hint">한 번 저장하면 모든 탭에서 이 정보로 만들어요.</p>
-
-      <div className="row" style={{ marginBottom: 12 }}>
-        <select value={current} onChange={(e) => select(e.target.value)} style={{ flex: 1 }}>
-          <option value="">+ 새 스토어</option>
+    <div className="custbar-wrap">
+      <div className="custbar">
+        <b>👤 고객 카드</b>
+        <select value={current} onChange={(e) => select(e.target.value)}>
+          <option value="">{count ? "고객 선택 (분석하면 자동 저장)" : "분석하면 자동으로 저장돼요"}</option>
           {Object.keys(profiles)
             .sort()
             .map((k) => (
@@ -131,13 +147,17 @@ export default function StoreProfile({ store, setStore }) {
               </option>
             ))}
         </select>
-        {current && (
-          <button className="btn small danger" onClick={remove}>
-            삭제
-          </button>
+        <button className="btn small" onClick={() => setOpen(!open)}>{open ? "닫기" : current ? "카드 보기·고치기" : "직접 입력"}</button>
+        {msg && <span className="okmsg">{msg}</span>}
+        {count > 0 && (backupDays == null || backupDays >= 14) && !open && (
+          <span className="hint" style={{ margin: 0, color: "var(--danger)" }}>{backupDays == null ? "백업한 적이 없어요" : `마지막 백업 ${backupDays}일 전`} → 카드 보기에서 백업</span>
         )}
       </div>
 
+      {open && (
+      <div className="panel custpanel">
+      <p className="hint">분석(페이지 분석·오프라인 가게)을 하면 고객 카드가 자동으로 만들어져요. 홍보 카피·카드뉴스·숏폼·고객 리포트가 이 정보를 써요. 비어 있는 칸만 자동으로 채우고, 직접 고친 내용은 그대로 둬요.</p>
+      <div className="custgrid">
       {FIELDS.map(([k, label, ph, type]) => (
         <label className="field" key={k}>
           <span>{label}</span>
@@ -148,13 +168,18 @@ export default function StoreProfile({ store, setStore }) {
           )}
         </label>
       ))}
+      </div>
 
       <div className="row">
-        <button className="btn dark" onClick={save} style={{ flex: 1 }}>
-          프로필 저장
+        <button className="btn dark" onClick={save}>
+          카드 저장
         </button>
+        {current && (
+          <button className="btn small danger" onClick={remove}>
+            이 고객 삭제
+          </button>
+        )}
       </div>
-      {msg && <p className="okmsg" style={{ margin: "8px 0 0" }}>{msg}</p>}
 
       <div className="backup-box">
         <div className="row" style={{ justifyContent: "space-between" }}>
@@ -173,6 +198,8 @@ export default function StoreProfile({ store, setStore }) {
           </label>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }

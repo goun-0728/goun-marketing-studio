@@ -78,10 +78,8 @@ export default function Home() {
       </header>
 
       <main className="wrap">
-        <aside className="sidebar">
-          <StoreProfile store={store} setStore={setStore} />
-        </aside>
         <section>
+          <StoreProfile store={store} setStore={setStore} />
           {/* 탭 전환해도 작업 내용이 날아가지 않게 숨김 처리 */}
           <div hidden={tab !== "copy"}><CopyTab store={store} /></div>
           <div hidden={tab !== "strategy"}><LocalTab store={store} /></div>

@@ -28,6 +28,7 @@ import { usePersistentState } from "@/lib/usePersist";
 import DiagnoseView from "./DiagnoseView";
 import ExportButtons from "./ExportButtons";
 import { scienceBundle } from "@/lib/science";
+import { upsertStoreCard } from "@/lib/storeCard";
 import { cleanName, fileName, previousScore, recordScore, shortProduct, yymmdd } from "@/lib/naming";
 import { Loading } from "./CopyTab";
 
@@ -623,6 +624,20 @@ export default function DiagnoseTab({ store }) {
       result.notes = [...skipped, ...(extra.notes || [])];
       setDiag(result);
       setHist((h) => [result, ...(Array.isArray(h) ? h : []).filter((x) => x.id !== result.id)].slice(0, 5));
+      // 고객 카드 자동 저장 (비어 있는 칸만 채움)
+      upsertStoreCard(
+        {
+          name: sName,
+          category: String(f.category || px.category || "").split(/[>›]/).pop().trim(),
+          channel: "스마트스토어",
+          products: f.product,
+          price: f.price ? `${Number(f.price).toLocaleString()}원` : "",
+          target: sci?.buyers?.main || "",
+          strengths: (plus.strengths || []).map((x) => x.title).filter(Boolean).join(", "),
+          link: keyword ? `네이버에서 '${keyword}' 검색` : "",
+        },
+        { fromName: store.name }
+      );
       setNotes([...skipped, ...(extra.notes || [])]);
 
       // 순위는 고객 리포트용 기록에도 남김
