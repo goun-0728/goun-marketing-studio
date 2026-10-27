@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadImports } from "@/lib/importer";
+import { loadImports, saveImport, searchKeyword } from "@/lib/importer";
 import { callAI, copyText, fetchLocal, makeShareLink } from "@/lib/client";
 import { encodeReport } from "@/lib/report";
 import { localBundle, localForAI } from "@/lib/local";
@@ -64,7 +64,40 @@ export default function LocalTab({ store }) {
       window.removeEventListener("gms-import", sync);
     };
   }, []);
-  const placeName = place ? String(place.title || "").replace(/\s*[:|-].*$/, "").trim() : "";
+  const px = place?.extracted || null;
+  const placeName = px?.name || "";
+  const [reading, setReading] = useState(false);
+  // 가져온 플레이스 화면 → AI가 가게 정보로 정리 (화면을 받은 탭에서 한 번만)
+  useEffect(() => {
+    if (!place || place.extracted || reading) return;
+    let owner = false;
+    try {
+      owner = !!sessionStorage.getItem(`gms_owner_place:${place.at}`);
+    } catch {}
+    if (!owner) return;
+    setReading(true);
+    callAI("extract_place", store, { page: place, query: searchKeyword(place.url) })
+      .then(({ data }) => {
+        const next = saveImport({ ...place, extracted: data || {} });
+        setPlace(next.place);
+      })
+      .catch((e) => setErr(`가게 화면 읽기 실패: ${e.message}`))
+      .finally(() => setReading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place?.at, place?.extracted]);
+  // 새 가게 화면을 읽으면 입력칸을 그 가게로 채움 (같은 화면이면 사용자가 고친 값 유지)
+  useEffect(() => {
+    if (!px || f._src === place.at) return;
+    setF((cur) => ({
+      ...cur,
+      _src: place.at,
+      name: px.name || cur.name,
+      area: px.area || cur.area,
+      biz: px.biz || (px.category ? String(px.category).split(/[,·]/)[0] : "") || cur.biz,
+      menu: (px.menu || []).map((m) => m.name).filter(Boolean).slice(0, 4).join("/") || cur.menu,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [px, place?.at]);
   const v = (k) => f[k] || { name: placeName || store.name, area: store.location, biz: store.category, menu: store.products }[k] || "";
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
@@ -77,7 +110,7 @@ export default function LocalTab({ store }) {
       setBusy("네이버에서 동네 가게·블로그·검색어를 모으는 중… (10~20초)");
       const data = localBundle(await fetchLocal(input));
       setBusy("전략을 짜는 중… (30~60초)");
-      const { data: ai } = await callAI("local", store, { ...input, budget: f.budget, goal: f.goal, situation: f.situation, data: localForAI(data), placeText: place?.text || "" });
+      const { data: ai } = await callAI("local", store, { ...input, budget: f.budget, goal: f.goal, situation: f.situation, data: localForAI(data), placeText: place?.text || "", placeInfo: px });
       let agency = {};
       try {
         agency = JSON.parse(localStorage.getItem("gms_agency") || "{}");
@@ -103,8 +136,17 @@ export default function LocalTab({ store }) {
           <span className={`imp-dot ${place ? "on" : ""}`}>📍</span>
           <div style={{ flex: 1 }}>
             <b>네이버 플레이스 화면</b> <span className="hint">(추천 · 실제 등록 상태를 보고 점검)</span>
-            {place ? (
-              <div className="hint" style={{ margin: 0 }}>✓ {placeName || "가게 정보"} · {new Date(place.at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} 가져옴</div>
+            {place && reading ? (
+              <div className="hint" style={{ margin: 0 }}>가게 화면을 읽는 중… (10초 안팎)</div>
+            ) : place ? (
+              <div className="hint" style={{ margin: 0 }}>
+                ✓ <b>{placeName || "가게 정보"}</b>
+                {px?.category ? ` · ${px.category}` : ""}
+                {px?.rating ? ` · ★${px.rating}` : ""}
+                {px?.visitorReviews != null ? ` · 방문자 리뷰 ${Number(px.visitorReviews).toLocaleString()}` : ""}
+                {px?.blogReviews != null ? ` · 블로그 리뷰 ${Number(px.blogReviews).toLocaleString()}` : ""}
+                {px?.menu?.length ? ` · 메뉴 ${px.menu.length}개` : ""} · {new Date(place.at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} 가져옴
+              </div>
             ) : (
               <div className="hint" style={{ margin: 0 }}><b>naver.com 검색창</b>에 가게 이름을 검색 → 가게 정보(영업시간·메뉴)가 보이는 화면에서 <b>🔍 고운 진단</b>을 누르세요. 네이버 <b>지도</b>(map.naver.com) 화면에서는 안 돼요.</div>
             )}
