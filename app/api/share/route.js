@@ -2,7 +2,7 @@ import { checkAuth } from "@/lib/server-auth";
 import { hasKv, kvGet, kvPut } from "@/lib/kv";
 
 export const dynamic = "force-dynamic";
-const KINDS = ["d", "r"]; // d = 진단서, r = 월간 리포트
+const KINDS = ["d", "r", "l"]; // d = 페이지 분석, r = 월간 리포트, l = 오프라인 가게
 
 // 짧은 링크 만들기 (스튜디오에서만 — 접속 비밀번호 필요)
 export async function POST(req) {
