@@ -10,7 +10,7 @@ import ReportTab from "@/components/ReportTab";
 import DiagnoseTab from "@/components/DiagnoseTab";
 import { KEY_STORAGE, verifyKey } from "@/lib/client";
 import { consumeHashImport } from "@/lib/importer";
-import { CURRENT, VERSIONS } from "@/lib/version";
+import { CURRENT } from "@/lib/version";
 
 const TABS = [
   { id: "diagnose", label: "🔍 페이지 분석" },
@@ -56,23 +56,14 @@ export default function Home() {
   return (
     <>
       <header className="topbar">
-        <details className="brand">
-          <summary>
-            <span className="brand-name">
-              고운 <span>마케팅 스튜디오</span>
-            </span>
-            <span className="brand-ver">
-              v{CURRENT.v} · {CURRENT.note}
-            </span>
-          </summary>
-          <div className="ver-list">
-            {VERSIONS.map((x) => (
-              <div key={x.v}>
-                <b>v{x.v}</b> <i>{x.date}</i> {x.note}
-              </div>
-            ))}
-          </div>
-        </details>
+        <div className="brand">
+          <span className="brand-name">
+            고운 <span>마케팅 스튜디오</span>
+          </span>
+          <span className="brand-ver">
+            v{CURRENT.v} · {CURRENT.note}
+          </span>
+        </div>
         <nav className="tabs">
           {TABS.map((t) => (
             <button key={t.id} className={`tab ${tab === t.id ? "active" : ""}`} onClick={() => pick(t.id)}>
