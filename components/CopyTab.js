@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CHANNELS } from "@/lib/prompts";
-import { callAI, copyText } from "@/lib/client";
+import { callAI, copyText, fetchBuzz } from "@/lib/client";
+import { analyzeBuzz, buzzForAI } from "@/lib/buzz";
 import { outKey, usePersistentState } from "@/lib/usePersist";
 import ExportButtons from "./ExportButtons";
 import { docShell, esc } from "@/lib/exporter";
@@ -28,13 +29,35 @@ export default function CopyTab({ store }) {
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(-1);
 
+  // 🔎 네이버에서 지금 잘 보이는 글 (블로그·지식iN·카페)
+  const [buzz, setBuzz] = usePersistentState(outKey("copy_buzz", store.name), null);
+  const [useBuzz, setUseBuzz] = usePersistentState(outKey("copy_buzz_on", store.name), true);
+  const [bkw, setBkw] = useState("");
+  const [bBusy, setBBusy] = useState(false);
+  const [bErr, setBErr] = useState("");
+  const kwGuess = String(store.products || store.category || store.name || "").split(/[,\n]/)[0].replace(/\d+\s*(g|kg|ml|개|팩)/gi, "").trim().slice(0, 20);
+  const loadBuzz = async () => {
+    const q = (bkw || kwGuess).trim();
+    if (!q) return setBErr("검색할 키워드를 넣어 주세요.");
+    setBBusy(true);
+    setBErr("");
+    try {
+      setBuzz(analyzeBuzz(await fetchBuzz(q)));
+      setUseBuzz(true);
+    } catch (e) {
+      setBErr(e.message);
+    } finally {
+      setBBusy(false);
+    }
+  };
+
   const toggle = (c) => setChannels(channels.includes(c) ? channels.filter((x) => x !== c) : [...channels, c]);
 
   const run = async () => {
     setBusy(true);
     setErr("");
     try {
-      const { data } = await callAI("copy", store, { channels, goal, extra, variants });
+      const { data } = await callAI("copy", store, { channels, goal, extra, variants, buzz: useBuzz && buzz ? buzzForAI(buzz) : null });
       setItems(data.items || []);
     } catch (e) {
       setErr(e.message);
@@ -82,6 +105,47 @@ export default function CopyTab({ store }) {
               <option value={3}>3안</option>
             </select>
           </label>
+        </div>
+
+        <div className="buzz">
+          <h3 style={{ marginTop: 0 }}>🔎 네이버에서 지금 잘 보이는 글 <span className="hint" style={{ fontWeight: 400 }}>(선택 · 블로그·지식iN·카페)</span></h3>
+          <div className="row" style={{ gap: 6 }}>
+            <input type="text" value={bkw} onChange={(e) => setBkw(e.target.value)} placeholder={kwGuess ? `키워드 (비우면 '${kwGuess}')` : "키워드 예: 무뼈닭발"} style={{ flex: 1, minWidth: 0 }} onKeyDown={(e) => e.key === "Enter" && loadBuzz()} />
+            <button className="btn" onClick={loadBuzz} disabled={bBusy}>{bBusy ? "불러오는 중…" : buzz ? "다시 불러오기" : "불러오기"}</button>
+          </div>
+          {bErr && <div className="error">{bErr}</div>}
+          {buzz && (
+            <div className="buzz-body">
+              <label className="buzz-use">
+                <input type="checkbox" checked={!!useBuzz} onChange={(e) => setUseBuzz(e.target.checked)} /> 이 분석을 카피에 반영 (‘{buzz.keyword}’ · 블로그 글 {buzz.blogTotal.toLocaleString()}개 중 상위 30개)
+              </label>
+              <div className="buzz-grid">
+                <div>
+                  <b>상위 글 제목에 자주 나오는 단어</b>
+                  <div className="buzz-words">{buzz.words.length ? buzz.words.map((x) => <span key={x.w}>{x.w} <i>{x.n}</i></span>) : <small>겹치는 단어가 적어요</small>}</div>
+                  <small>제목 평균 {buzz.avgLen}자{buzz.recentShare != null ? ` · 최근 3개월 글 ${buzz.recentShare}%${buzz.recentShare >= 50 ? " (새 글도 잘 올라가요)" : " (오래된 글이 자리 잡고 있어요)"}` : ""}</small>
+                </div>
+                <div>
+                  <b>상위 글 유형</b>
+                  {buzz.types.filter((t) => t.n).map((t) => (
+                    <div key={t.name} className="buzz-type"><span>{t.name}</span><i style={{ width: `${t.share}%` }} /><em>{t.share}%</em></div>
+                  ))}
+                  {buzz.empty.length > 0 && <small className="buzz-gap">빈자리: {buzz.empty.join(", ")} 글은 상위에 없어요 → 이 각도로 쓰면 눈에 띄어요</small>}
+                </div>
+                {buzz.questions.length > 0 && (
+                  <div>
+                    <b>지식iN에서 손님이 묻는 것</b>
+                    <ul>{buzz.questions.slice(0, 6).map((q, i) => <li key={i}>{q}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+              <details>
+                <summary>상위 블로그 제목 보기</summary>
+                <ol>{buzz.topTitles.map((t, i) => <li key={i}>{t}</li>)}</ol>
+              </details>
+              {buzz.errors?.length > 0 && <small>일부 못 불러옴: {buzz.errors.join(" / ")}</small>}
+            </div>
+          )}
         </div>
 
         <div className="row">
