@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import StoreProfile, { EMPTY_STORE } from "@/components/StoreProfile";
 import CopyTab from "@/components/CopyTab";
-import StrategyTab from "@/components/StrategyTab";
+import LocalTab from "@/components/LocalTab";
 import CardNewsTab from "@/components/CardNewsTab";
 import ShortsTab from "@/components/ShortsTab";
 import ReportTab from "@/components/ReportTab";
@@ -15,7 +15,7 @@ import { CURRENT } from "@/lib/version";
 const TABS = [
   { id: "diagnose", label: "🔍 페이지 분석" },
   { id: "copy", label: "✍️ 홍보 카피" },
-  { id: "strategy", label: "📊 전략 리포트" },
+  { id: "strategy", label: "🏪 오프라인 가게" },
   { id: "cardnews", label: "🖼️ 카드뉴스" },
   { id: "shorts", label: "🎬 숏폼 자동편집" },
   { id: "report", label: "📋 고객 리포트" },
@@ -84,7 +84,7 @@ export default function Home() {
         <section>
           {/* 탭 전환해도 작업 내용이 날아가지 않게 숨김 처리 */}
           <div hidden={tab !== "copy"}><CopyTab store={store} /></div>
-          <div hidden={tab !== "strategy"}><StrategyTab store={store} /></div>
+          <div hidden={tab !== "strategy"}><LocalTab store={store} /></div>
           <div hidden={tab !== "cardnews"}><CardNewsTab store={store} /></div>
           <div hidden={tab !== "shorts"}><ShortsTab store={store} /></div>
           <div hidden={tab !== "diagnose"}><DiagnoseTab store={store} /></div>
