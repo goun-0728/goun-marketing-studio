@@ -97,6 +97,13 @@ export default function LocalView({ r }) {
         </div>
       )}
 
+      {!a.place?.length && !r.placeAt && (
+        <>
+          <h2>🗺️ 네이버 플레이스 점검</h2>
+          <p className="note" style={{ marginTop: 0 }}>이번 분석은 가게 플레이스 화면 없이 만들어서 점검을 빼 두었어요. 가게 이름을 네이버에서 검색한 화면에서 '고운 진단' 버튼을 누른 뒤 다시 분석하면, 실제 등록 상태(사진·메뉴·소식·리뷰 답글 등)를 보고 점검해 드려요.</p>
+        </>
+      )}
+
       {a.place?.length > 0 && (
         <>
           <h2>🗺️ 네이버 플레이스 점검</h2>

@@ -71,6 +71,7 @@ export default function LocalTab({ store }) {
   const run = async () => {
     const input = { name: v("name").trim(), area: v("area").trim(), biz: v("biz").trim(), menu: v("menu").trim() };
     if (!input.area || !input.biz) return setErr("지역과 업종 키워드를 넣어 주세요. 예: 지역 '대구 수성구', 업종 '막창'");
+    if (!place && !confirm("가게 플레이스 화면을 아직 안 가져왔어요.\n\n가게 이름을 네이버에서 검색한 화면에서 '고운 진단'을 누르면 플레이스 점검까지 같이 돼요.\n\n화면 없이 지금 분석할까요? (플레이스 점검은 빠져요)")) return;
     setErr("");
     try {
       setBusy("네이버에서 동네 가게·블로그·검색어를 모으는 중… (10~20초)");
@@ -105,7 +106,7 @@ export default function LocalTab({ store }) {
             {place ? (
               <div className="hint" style={{ margin: 0 }}>✓ {placeName || "가게 정보"} · {new Date(place.at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} 가져옴</div>
             ) : (
-              <div className="hint" style={{ margin: 0 }}>가게 이름을 네이버에서 검색해 가게 정보(영업시간·메뉴)가 보이는 화면에서 <b>🔍 고운 진단</b>을 누르세요. 지도(map.naver.com) 화면에서는 안 돼요.</div>
+              <div className="hint" style={{ margin: 0 }}><b>naver.com 검색창</b>에 가게 이름을 검색 → 가게 정보(영업시간·메뉴)가 보이는 화면에서 <b>🔍 고운 진단</b>을 누르세요. 네이버 <b>지도</b>(map.naver.com) 화면에서는 안 돼요.</div>
             )}
           </div>
         </div>
