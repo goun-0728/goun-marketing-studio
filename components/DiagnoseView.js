@@ -182,6 +182,39 @@ const DIAG_CSS = `
 .dg-ladder .t{border:2px solid var(--accent);background:#fdeee8}
 .dg-ladder b{font-size:16px}.dg-ladder small{font-size:12px;color:var(--muted)}
 .dg-locked{font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:12px;padding:10px 14px}
+.dg-demo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.dg-demo>div{background:var(--soft);border-radius:12px;padding:12px 14px}
+.dg-demo b{display:block;font-size:13px;margin-bottom:6px}
+.dg-demo .r{display:grid;grid-template-columns:62px 1fr 44px;gap:6px;align-items:center;font-size:12px;margin:3px 0}
+.dg-demo .r i{display:block;height:8px;border-radius:99px;background:#d6d0c6}
+.dg-demo .r.top i{background:var(--accent)}
+.dg-demo .r span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.dg-demo .split{display:flex;height:22px;border-radius:6px;overflow:hidden;font-size:11px;font-weight:700;color:#fff}
+.dg-demo .split span{display:flex;align-items:center;justify-content:center;min-width:28px}
+.dg-persona{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.dg-persona>div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.dg-persona .n{font-weight:800;font-size:15px}
+.dg-persona .meta{font-size:12px;color:var(--muted)}
+.dg-persona ul{margin:0;padding-left:16px}
+.dg-persona .tg{background:#fdeee8;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--accent)}
+.dg-sub{font-size:15px;margin:18px 0 8px}
+.dg-fit{display:flex;flex-direction:column;gap:0}
+.dg-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.dg-cols>div{border-radius:12px;padding:12px 14px;font-size:13px}
+.dg-cols .ok{background:#f3faf5;border:1px solid #cfe8d8}
+.dg-cols .add{background:#fff8ec;border:1px solid #f3e2bf}
+.dg-cols .gap{background:#fdf2f2;border:1px solid #f1d0d0}
+.dg-cols ul{margin:6px 0 0;padding-left:16px}
+.dg-cols li{margin-bottom:4px}
+.dg-cols li span{display:block;color:var(--muted);font-size:12px}
+.dg-seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.dg-seg>div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;display:flex;flex-direction:column;gap:3px}
+.dg-seg q{display:block;background:var(--soft);border-radius:8px;padding:6px 10px;font-weight:700;quotes:none}
+.dg-seg small{color:var(--muted)}
+.dg-years{display:flex;align-items:flex-end;gap:8px;height:110px;margin-top:6px}
+.dg-years div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:11px;color:var(--muted);gap:4px}
+.dg-years i{display:block;width:100%;max-width:46px;border-radius:5px 5px 0 0;background:#d6d0c6}
+.dg-years div:last-child i{background:var(--accent)}
 @media (max-width:520px){.dg-ladder{grid-template-columns:1fr}.dg-hero{flex-direction:column;text-align:center}.dg-area{grid-template-columns:96px 1fr 52px;font-size:13px}}
 `;
 
@@ -264,6 +297,8 @@ function Glance({ d }) {
   if (s.coverage) cells.push({ k: "관련 키워드 검색 합계", v: `${n0(s.coverage.total)}회`, s: `관련 키워드 ${s.tableTotal}개 · 한 달 기준` });
   if (s.coverage) cells.push({ k: "상품명 검색 커버율", v: `${s.coverage.pct}%`, s: "관련 검색량 중 상품명이 잡는 비율", hot: s.coverage.pct < 60 });
   if (s.mobile != null) cells.push({ k: "모바일 검색 비중", v: `${s.mobile}%`, s: "상세페이지는 휴대폰 화면 기준으로" });
+  if (s.buyers?.main) cells.push({ k: "주 고객", v: s.buyers.main, s: `${s.buyers.mainShare}% · 네이버 쇼핑 클릭 기준` });
+  if (s.long?.yoy != null) cells.push({ k: "시장 흐름", v: `${s.long.yoy >= 0 ? "+" : ""}${s.long.yoy}%`, s: "최근 1년 검색, 전년 대비", hot: s.long.yoy <= -10 });
   if (d.myRank) cells.push({ k: "검색 순위", v: `${d.myRank}위`, s: `‘${d.keyword}’ 광고 제외 자연 순위` });
   if (s.price) cells.push({ k: "가격 위치", v: s.price.zone, s: s.priceMin ? `대표가 기준 · 가장 싼 구성은 ${s.priceMin.zone}` : `경쟁 ${s.price.n}개 중 ${s.price.pct}%보다 비쌈` });
   if (s.wave) cells.push({ k: "다음 성수기", v: s.wave.monthsToPeak === 0 ? "지금" : `${s.wave.peak}월`, s: s.wave.monthsToPeak === 0 ? "지금이 검색 정점이에요" : `${s.wave.prepare}월부터 준비 · ${s.wave.monthsToPeak}개월 남음`, hot: s.wave.monthsToPeak > 0 && s.wave.monthsToPeak <= 2 });
@@ -465,7 +500,7 @@ function Science({ d }) {
           </>
         }
         so={`${w.rise}월부터 찾는 사람이 늘기 시작해요. 상품명·상세페이지·광고 준비는 ${w.prepare}월 안에 끝내 두세요.${w.repeat != null ? (w.repeat >= 0.7 ? " 작년과 올해 흐름이 거의 같아서 믿을 만한 예측이에요." : w.repeat < 0.4 ? " 다만 해마다 흐름이 들쭉날쭉해서 참고용으로 보세요." : "") : ""}`}
-        basis={`2년치 월별 검색량을 1년 주기의 파동으로 겹쳐 가장 높은 달·낮은 달·차이를 계산${w.repeat != null ? ` · 작년과 올해 같은 달끼리 닮은 정도(상관계수) ${w.repeat} (1에 가까울수록 같음)` : ""}`}
+        basis={`최근 몇 년치 월별 검색량을 1년 주기의 파동으로 겹쳐 가장 높은 달·낮은 달·차이를 계산${w.repeat != null ? ` · 작년과 올해 같은 달끼리 닮은 정도(상관계수) ${w.repeat} (1에 가까울수록 같음)` : ""}`}
       />
     );
   }
@@ -562,6 +597,167 @@ function Science({ d }) {
       <div className="dg-locked" style={{ marginTop: 10 }}>
         🔒 판매·리뷰 숫자가 몇 주 쌓이면 더 볼 수 있어요: 광고·이벤트 효과가 며칠 가는지 · 입소문이 퍼지는 중인지 · 상품명/썸네일을 바꾼 효과가 진짜인지
       </div>
+    </>
+  );
+}
+
+// 👥 구매자 분석 (쇼핑인사이트 + AI) — 참고용
+function Buyers({ d }) {
+  const b = d.sci?.buyers;
+  const a = d.buyer;
+  if (!b && !a) return null;
+  const maxAge = b ? Math.max(...b.ages.map((x) => x.share), 1) : 1;
+  const topAge = b ? [...b.ages].sort((x, y) => y.share - x.share)[0]?.group : null;
+  const LV = { good: ["dg-good", "잘 맞아요"], warn: ["dg-warn", "보완 추천"], bad: ["dg-bad", "우선 개선"] };
+  return (
+    <>
+      <h2>👥 구매자 분석 <span className="dg-ref">참고용</span></h2>
+      {a?.summary && <p style={{ margin: "0 0 10px" }}>{L(a.summary)}</p>}
+      {b && (
+        <>
+          <div className="dg-demo">
+            <div>
+              <b>연령대</b>
+              {b.ages.map((x) => (
+                <div key={x.group} className={`r ${x.group === topAge ? "top" : ""}`}>
+                  <span>{x.label}</span>
+                  <span><i style={{ width: `${(x.share / maxAge) * 100}%` }} /></span>
+                  <span>{x.share}%</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              {b.female != null && (
+                <>
+                  <b>성별</b>
+                  <div className="split">
+                    <span style={{ width: `${b.female}%`, background: "#d93a5b" }}>여 {Math.round(b.female)}%</span>
+                    <span style={{ width: `${b.male}%`, background: "#2f6fdf" }}>남 {Math.round(b.male)}%</span>
+                  </div>
+                </>
+              )}
+              {b.mobile != null && (
+                <>
+                  <b style={{ marginTop: 12 }}>기기</b>
+                  <div className="split">
+                    <span style={{ width: `${b.mobile}%`, background: "#1b1a17" }}>모바일 {Math.round(b.mobile)}%</span>
+                    <span style={{ width: `${100 - b.mobile}%`, background: "#9a958c" }}>PC {Math.round(100 - b.mobile)}%</span>
+                  </div>
+                </>
+              )}
+              <p className="rp-note" style={{ marginBottom: 0 }}>주 고객: <b style={{ display: "inline" }}>{b.main}</b> ({b.mainShare}%) · {b.top2.join("·")}가 {b.top2Share}%</p>
+            </div>
+          </div>
+          <p className="rp-note">네이버 쇼핑인사이트 · ‘{d.keyword}’ 최근 1년 쇼핑 클릭 기준 비율이에요 (실제 구매자 수가 아니라 관심 비율).</p>
+        </>
+      )}
+      {!b && <p className="rp-note">네이버 연령·성별 데이터가 없어서 리뷰와 상품 특성으로 추정했어요.</p>}
+
+      {a?.personas?.length > 0 && (
+        <div className="dg-persona">
+          {a.personas.map((p, i) => (
+            <div key={i}>
+              <span className="n">{p.name}</span>
+              <span className="meta">{[p.age, p.gender, p.share].filter(Boolean).join(" · ")}{p.source === "guess" && !String(p.share || "").includes("추정") ? " (추정)" : p.source === "review" ? " (리뷰 기준)" : ""}</span>
+              {p.situation && <span>{L(p.situation)}</span>}
+              {p.needs?.length > 0 && <><b style={{ fontSize: 12 }}>원하는 것</b><ul>{p.needs.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
+              {p.worries?.length > 0 && <><b style={{ fontSize: 12 }}>망설이는 이유</b><ul>{p.worries.map((x, j) => <li key={j}>{x}</li>)}</ul></>}
+              {p.trigger && <span className="tg">사게 만드는 것: {p.trigger}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {a?.ageFit?.checks?.length > 0 && (
+        <>
+          <h3 className="dg-sub">🎯 상세페이지가 {a.ageFit.target || "주 고객"}에게 맞을까 · {a.ageFit.score}/10</h3>
+          {a.ageFit.verdict && <p className="rp-note" style={{ marginTop: 0 }}>{a.ageFit.verdict}</p>}
+          <div className="dg-find">
+            {a.ageFit.checks.map((c, i) => (
+              <div className="dg-f" key={i}>
+                <span className="b"><span className={`dg-badge ${(LV[c.level] || LV.warn)[0]}`}>{(LV[c.level] || LV.warn)[1]}</span></span>
+                <span className="t">{c.item}</span>
+                {c.comment && <span className="d">{L(c.comment)}</span>}
+                {c.fix && c.level !== "good" && <span className="x">{L(c.fix)}</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {a?.reviewFit && (a.reviewFit.matched?.length || a.reviewFit.missing?.length || a.reviewFit.gaps?.length) ? (
+        <>
+          <h3 className="dg-sub">🔁 후기와 상세페이지가 같은 말을 할까 · {a.reviewFit.score}/10</h3>
+          {a.reviewFit.verdict && <p className="rp-note" style={{ marginTop: 0 }}>{a.reviewFit.verdict}</p>}
+          <div className="dg-cols">
+            {a.reviewFit.matched?.length > 0 && (
+              <div className="ok"><b>✓ 잘 맞는 부분</b><ul>{a.reviewFit.matched.map((x, i) => <li key={i}>{x.point}{x.note && <span>{x.note}</span>}</li>)}</ul></div>
+            )}
+            {a.reviewFit.missing?.length > 0 && (
+              <div className="add"><b>＋ 후기엔 있는데 상세엔 없는 장점</b><ul>{a.reviewFit.missing.map((x, i) => <li key={i}>{x.point}{x.fix && <span>→ {x.fix}</span>}</li>)}</ul></div>
+            )}
+            {a.reviewFit.gaps?.length > 0 && (
+              <div className="gap"><b>! 상세 약속과 후기 불만이 어긋나요</b><ul>{a.reviewFit.gaps.map((x, i) => <li key={i}>{x.point}{x.fix && <span>→ {x.fix}</span>}</li>)}</ul></div>
+            )}
+          </div>
+        </>
+      ) : null}
+
+      {a?.segments?.length > 0 && (
+        <>
+          <h3 className="dg-sub">🧭 {a.hasDetail ? "타겟층별로 이렇게 접근해 보세요" : "상세페이지를 만들기 전, 타겟을 이렇게 나눠 보세요"}</h3>
+          <div className="dg-seg">
+            {a.segments.map((g, i) => (
+              <div key={i}>
+                <b>{g.name}</b>
+                <small>{[g.who, g.share].filter(Boolean).join(" · ")}</small>
+                {g.message && <q>“{g.message}”</q>}
+                {g.first && <span>첫 화면: {g.first}</span>}
+                {g.proof && <span>근거: {g.proof}</span>}
+                {g.tone && <small>말투·디자인: {g.tone}</small>}
+              </div>
+            ))}
+          </div>
+          {a.priority && <p className="dg-note" style={{ marginTop: 10 }}>{L(a.priority)}</p>}
+        </>
+      )}
+      <p className="dg-refnote">※ 참고용 분석이에요. 쇼핑 클릭 비율과 화면에 보이는 리뷰·상세페이지를 바탕으로 한 판단이라, 실제 주문 데이터와는 다를 수 있어요.</p>
+    </>
+  );
+}
+
+// 📈 시장 흐름 (5년 검색 + 카테고리 클릭)
+function Market({ d }) {
+  const l = d.sci?.long;
+  const cw = d.sci?.catWave;
+  if (!l && !cw) return null;
+  const max = l ? Math.max(...l.years.map((y) => y.avg), 1) : 1;
+  return (
+    <>
+      <h2>📈 시장 흐름</h2>
+      {l && (
+        <>
+          <p style={{ margin: "0 0 4px" }}>
+            최근 1년 검색은 그 전 1년보다 <b style={{ color: l.yoy >= 0 ? "#1f7a45" : "#b4232f" }}>{l.yoy >= 0 ? `${l.yoy}% 늘었어요` : `${-l.yoy}% 줄었어요`}</b>
+            {l.total != null ? ` · ${l.fromYear}년 → ${l.toYear}년 ${l.total >= 0 ? `+${l.total}` : l.total}%` : ""}
+            {l.dir === "up" ? " — 커지는 시장이에요." : l.dir === "down" ? " — 줄어드는 시장이라 세부 키워드·차별점이 더 중요해요." : " — 큰 변화 없이 꾸준한 시장이에요."}
+          </p>
+          <div className="dg-years" role="img" aria-label="연도별 검색 흐름">
+            {l.years.map((y) => (
+              <div key={y.year} title={`${y.year}년 평균 ${y.avg}`}>
+                <i style={{ height: `${Math.max(4, (y.avg / max) * 90)}px` }} />
+                <span>{y.year}{y.months < 12 ? "*" : ""}</span>
+              </div>
+            ))}
+          </div>
+          <p className="rp-note">네이버 검색어 트렌드 · 연도별 월평균 검색 지수 (* 표시는 1년이 다 차지 않은 해)</p>
+        </>
+      )}
+      {cw && (
+        <p className="dg-note">
+          카테고리 전체로 보면 <b>{cw.peak}월</b>에 가장 많이 클릭하고 <b>{cw.rise}월</b>부터 오르기 시작해요 (네이버 쇼핑인사이트). 키워드 성수기와 같이 보고 준비 시점을 정하세요.
+        </p>
+      )}
     </>
   );
 }
@@ -803,7 +999,7 @@ export default function DiagnoseView({ diag }) {
 
       {d.season && (
         <>
-          <h2>📅 시즌 (최근 2년 월별 검색 흐름)</h2>
+          <h2>📅 시즌 (최근 5년 월별 평균 검색 흐름)</h2>
           <div className="dg-season" role="img" aria-label="월별 검색 흐름">
             {d.season.avg.map((v, i) => (
               <div key={i} className={`${d.season.peaks.includes(i + 1) ? "pk" : ""} ${d.season.current === i + 1 ? "cur" : ""}`} title={`${i + 1}월 상대 검색량 ${Math.round(v)}`}>
@@ -818,6 +1014,8 @@ export default function DiagnoseView({ diag }) {
           </p>
         </>
       )}
+
+      <Market d={d} />
 
       <Science d={d} />
 
@@ -866,6 +1064,8 @@ export default function DiagnoseView({ diag }) {
           </div>
         </>
       )}
+
+      <Buyers d={d} />
 
       {(() => {
         const da = (d.areas || []).find((a) => a.key === "detail");

@@ -1,6 +1,6 @@
 import { checkAuth } from "@/lib/server-auth";
 import { rateLimit } from "@/lib/ratelimit";
-import { bidEstimate, hasAdApi, hasTrendApi, keywordTool, performanceEstimate, searchTrend } from "@/lib/naver";
+import { bidEstimate, hasAdApi, hasTrendApi, keywordTool, performanceEstimate, searchTrend, shoppingInsight } from "@/lib/naver";
 
 export const maxDuration = 45;
 
@@ -11,18 +11,24 @@ export async function POST(req) {
   const limited = rateLimit(req, "diag", 30);
   if (limited) return limited;
 
-  const { keywords = [] } = await req.json().catch(() => ({}));
+  const { keywords = [], categoryIds = [] } = await req.json().catch(() => ({}));
   const kws = [...new Set(keywords.map((k) => String(k).trim()).filter(Boolean))].slice(0, 5);
   if (!kws.length) return Response.json({ trend: null, keywords: null, notes: [] });
 
   const notes = [];
   let trend = null;
+  let buyers = null; // 쇼핑인사이트: 연령·성별 비율
   if (hasTrendApi()) {
-    try {
-      trend = await searchTrend(kws[0]);
-    } catch (e) {
-      notes.push(`시즌 분석 생략: ${e.message}`);
-    }
+    const cats = [...new Set(categoryIds.map(String).filter((c) => /^\d{6,}$/.test(c)))].slice(0, 4);
+    const [t, b] = await Promise.allSettled([
+      searchTrend(kws[0]),
+      cats.length ? shoppingInsight(cats, kws[0]) : Promise.resolve(null),
+    ]);
+    if (t.status === "fulfilled") trend = t.value;
+    else notes.push(`시즌 분석 생략: ${t.reason?.message}`);
+    if (b.status === "fulfilled") buyers = b.value;
+    else notes.push(`구매자 연령·성별 분석 생략: ${b.reason?.message} (NAVER API HUB에서 '쇼핑인사이트' 이용 신청 필요)`);
+    if (!cats.length) notes.push("구매자 연령·성별 분석 생략: 상품 카테고리 코드를 읽지 못했어요 ('고운 진단' 버튼을 다시 설치해 주세요)");
   }
 
   let keywordsData = null;
@@ -54,5 +60,5 @@ export async function POST(req) {
       notes.push(`예상 입찰가 생략: ${e.message}`);
     }
   }
-  return Response.json({ trend, keywords: keywordsData, allKeywords, adEstimates, notes });
+  return Response.json({ trend, buyers, keywords: keywordsData, allKeywords, adEstimates, notes });
 }

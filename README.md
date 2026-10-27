@@ -27,7 +27,7 @@ npm run dev                  # http://localhost:3000
 |---|---|---|
 | `ANTHROPIC_API_KEY` | ✅ | 카피·전략·카드뉴스·AI 자막 |
 | `OPENAI_API_KEY` | 선택 | 숏폼 '말소리 받아쓰기' 자막 (없으면 AI 자막 모드만 사용) |
-| `NCP_HUB_CLIENT_ID` / `NCP_HUB_CLIENT_SECRET` | 선택 | 진단의 시즌 분석. 네이버클라우드 → NAVER API HUB → Search Trend |
+| `NCP_HUB_CLIENT_ID` / `NCP_HUB_CLIENT_SECRET` | 권장 | 네이버클라우드 → NAVER API HUB. **Search Trend**(5년 검색 흐름·시즌) + **Shopping Insight**(구매자 연령·성별·기기, 카테고리 클릭 흐름) 둘 다 이용 신청 |
 | `NAVER_AD_API_KEY` / `NAVER_AD_SECRET` / `NAVER_AD_CUSTOMER_ID` | 권장 | 진단의 키워드 검색량·경쟁 정도 + **📣 광고 제안**(추천 키워드 그룹·예상 입찰가·월 예상 성과·제외 키워드). 네이버 검색광고 → 도구 → API 사용 관리 |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | 권장 | 고객용 **짧은 링크**. Vercel → Storage → Upstash for Redis(무료) 연결 시 자동 입력. 없으면 긴 링크로 대체 |
 | `APP_PASSWORD` | 권장 | 배포 시 남이 API 크레딧 못 쓰게 막는 접속 비밀번호 (앱 오른쪽 위 🔑에 입력) |

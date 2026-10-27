@@ -355,7 +355,10 @@ export default function DiagnoseTab({ store }) {
       setBusy("검색량·시즌 확인 중…");
       let extra = { trend: null, keywords: null, notes: [] };
       try {
-        extra = await fetchMarket({ keywords: [keyword, ...subs].filter(Boolean) });
+        // 카테고리 코드: 세부 → 상위 순 (쇼핑인사이트는 세부 카테고리에 데이터가 없으면 상위로)
+        const pk = product?.pick || {};
+        const catIds = [...String(pk.wholeCategoryId || "").split(/[>\s]+/).filter(Boolean).reverse(), pk.categoryId].filter((x) => /^\d{6,}$/.test(String(x || "")));
+        extra = await fetchMarket({ keywords: [keyword, ...subs].filter(Boolean), categoryIds: [...new Set(catIds)] });
       } catch (e) {
         extra.notes = [e.message];
       }
@@ -455,6 +458,7 @@ export default function DiagnoseTab({ store }) {
         shipFee: +f.shipFee || 0,
         rankHist: market && keyword ? rankHist : null,
         optionPrices: px.optionPrices,
+        buyers: extra.buyers,
       });
 
       const sci0 = makeSci(extra.dropped || []);
@@ -467,6 +471,9 @@ export default function DiagnoseTab({ store }) {
         가격: priceArea?.stats ? { 중앙값: Math.round(priceArea.stats.med), 비싼비율: Math.round(priceArea.stats.below * 100) + "%" } : null,
         마진: marginArea?.margin ? { 주문당이익: Math.round(marginArea.margin.profit), 마진율: Math.round(marginArea.margin.rate * 100) + "%" } : null,
         키워드: kwOp ? { 대표키워드검색량: kwOp.mainVolume, 경쟁: kwOp.mainComp, 상품명에없는검색어: kwOp.missing.slice(0, 5).map((k) => `${k.keyword}(${k.volume})`), 경쟁낮은키워드: kwOp.golden.slice(0, 5).map((k) => `${k.keyword}(${k.volume},${k.comp})`) } : null,
+        구매자: sci0.buyers ? { 주고객: sci0.buyers.main, 주고객비율: `${sci0.buyers.mainShare}%`, 연령별: sci0.buyers.ages.map((a) => `${a.label} ${a.share}%`), 여성: sci0.buyers.female, 남성: sci0.buyers.male, 모바일: sci0.buyers.mobile, 출처: "네이버 쇼핑인사이트 최근 1년 클릭" } : "연령·성별 데이터 없음",
+        시장흐름: sci0.long ? { 최근1년_전년대비: `${sci0.long.yoy}%`, 장기변화: sci0.long.total != null ? `${sci0.long.fromYear}→${sci0.long.toYear} ${sci0.long.total}%` : null } : null,
+        카테고리시즌: sci0.catWave ? { 카테고리클릭정점: `${sci0.catWave.peak}월`, 상승시작: `${sci0.catWave.rise}월` } : null,
         데이터분석: {
           대표키워드월검색량: sci0.mainRow?.volume ?? null,
           관련키워드검색합계: sci0.coverage?.total ?? null,
@@ -505,9 +512,12 @@ export default function DiagnoseTab({ store }) {
       const pageText = String(product.text || "");
       const dIdx = pageText.search(/상세정보|상품정보|상세 정보|상품 상세/);
       const detailText = (dIdx >= 0 ? pageText.slice(dIdx, dIdx + 6000) : pageText.slice(2000, 8000)).trim();
-      const [mainRes, plusRes] = await Promise.allSettled([
+      const reviewsForAI = { 칭찬: px.reviewPraise || [], 불만: px.reviewIssues || [], 불만원문: (px.reviewNegatives || []).map((x) => x.q), 리뷰글: (product.revs || []).slice(0, 25).map((v) => `[${v.s ?? "?"}점] ${v.x.slice(0, 120)}`) };
+      const [mainRes, plusRes, buyerRes] = await Promise.allSettled([
         callAI("diagnose", storeForAI, { productName: f.product, keyword, summary, hasImages: imgs.length > 0, detailText }, [], imgs),
         callAI("diagnose_plus", storeForAI, { productName: f.product, keyword, summary, product: productInfo, competitors, agency: agency.name, ad: adForAI }),
+        // 구매자 분석: 누가 사는지 → 상세페이지가 그 사람에게 맞는지 → 후기와 상세페이지가 같은 말을 하는지
+        callAI("buyer", storeForAI, { productName: f.product, keyword, category: f.category || px.category, buyers: sci0.buyers, product: productInfo, reviews: reviewsForAI, detailText, hasImages: imgs.length > 0, competitors: (competitors || []).slice(0, 8) }, [], imgs.slice(0, 8)),
       ]);
       let ai = {};
       if (mainRes.status === "fulfilled") {
@@ -515,6 +525,8 @@ export default function DiagnoseTab({ store }) {
         if (mainRes.value.imageNote) skipped.push(mainRes.value.imageNote);
       } else skipped.push(`AI 요약 실패 — 점수·근거만 표시 (${mainRes.reason?.message})`);
       const plus = plusRes.status === "fulfilled" ? plusRes.value.data || {} : {};
+      const buyerAI = buyerRes.status === "fulfilled" ? buyerRes.value.data || null : null;
+      if (buyerRes.status === "rejected") skipped.push(`구매자·상세페이지 적합성 분석 실패 — 다시 분석하면 채워져요 (${buyerRes.reason?.message})`);
       if (plusRes.status === "rejected") skipped.push(`상세 분석 실패 — 다시 분석하면 채워져요 (${plusRes.reason?.message})`);
       // AI가 '상품과 무관'으로 분류한 키워드는 상품명 추천에서도 뺌
       const neg = new Set((plus.adPlan?.negatives || []).map((k) => String(k).replace(/\s+/g, "")));
@@ -587,6 +599,7 @@ export default function DiagnoseTab({ store }) {
         currentTitle: f.product,
         titleOptions: (plus.titleOptions || []).slice(0, 3),
         detailPlan: (plus.detailPlan?.length ? plus.detailPlan : basicDetailPlan(f.product, px)).slice(0, 8),
+        buyer: buyerAI ? { ...buyerAI, hasDetail: imgs.length > 0 || detailText.length > 300 } : null,
         detailBasis: imgs.length ? `상세 이미지 ${imgs.length}장` : "상세페이지 글자",
         reviewReplies: (plus.reviewReplies || []).slice(0, 3),
         reviews: {
