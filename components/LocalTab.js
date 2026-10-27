@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { loadImports } from "@/lib/importer";
 import { callAI, fetchLocal } from "@/lib/client";
 import { localBundle, localForAI } from "@/lib/local";
 import { logWork } from "@/lib/report";
@@ -19,7 +20,20 @@ export default function LocalTab({ store }) {
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const viewRef = useRef(null);
-  const v = (k) => f[k] || { name: store.name, area: store.location, biz: store.category, menu: store.products }[k] || "";
+  // '고운 진단' 버튼으로 가져온 네이버 플레이스 화면 (실제 등록 상태를 보고 점검)
+  const [place, setPlace] = useState(null);
+  useEffect(() => {
+    const sync = () => setPlace(loadImports().place || null);
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("gms-import", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("gms-import", sync);
+    };
+  }, []);
+  const placeName = place ? String(place.title || "").replace(/\s*[:|-].*$/, "").trim() : "";
+  const v = (k) => f[k] || { name: placeName || store.name, area: store.location, biz: store.category, menu: store.products }[k] || "";
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
   const run = async () => {
@@ -30,13 +44,13 @@ export default function LocalTab({ store }) {
       setBusy("네이버에서 동네 가게·블로그·검색어를 모으는 중… (10~20초)");
       const data = localBundle(await fetchLocal(input));
       setBusy("전략을 짜는 중… (30~60초)");
-      const { data: ai } = await callAI("local", store, { ...input, budget: f.budget, goal: f.goal, situation: f.situation, data: localForAI(data) });
+      const { data: ai } = await callAI("local", store, { ...input, budget: f.budget, goal: f.goal, situation: f.situation, data: localForAI(data), placeText: place?.text || "" });
       let agency = {};
       try {
         agency = JSON.parse(localStorage.getItem("gms_agency") || "{}");
       } catch {}
       const now = new Date();
-      setRes({ ...input, budget: f.budget, data, ai, agency: agency.name || "고운기획", contact: agency.contact || "", at: now.toISOString(), date: `${now.toLocaleDateString("ko-KR")} ${now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })}` });
+      setRes({ ...input, budget: f.budget, data, ai, placeAt: place ? new Date(place.at).toLocaleDateString("ko-KR") : null, agency: agency.name || "고운기획", contact: agency.contact || "", at: now.toISOString(), date: `${now.toLocaleDateString("ko-KR")} ${now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })}` });
       logWork(store.name || input.name, "상담", `오프라인 가게 분석·전략 (${data.query})`);
     } catch (e) {
       setErr(e.message);
@@ -50,6 +64,17 @@ export default function LocalTab({ store }) {
       <div className="panel">
         <h2>🏪 오프라인 가게 분석·전략</h2>
         <p className="hint">식당·카페·미용실처럼 스마트스토어 상품 페이지가 없는 가게용이에요. 네이버 지역 검색으로 주변 경쟁 가게와 블로그 언급 수를 비교하고, 동네 손님 검색어·시즌을 넣어 한 달 전략을 짜요.</p>
+        <div className="imp-row" style={{ marginBottom: 12 }}>
+          <span className={`imp-dot ${place ? "on" : ""}`}>📍</span>
+          <div style={{ flex: 1 }}>
+            <b>네이버 플레이스 화면</b> <span className="hint">(추천 · 실제 등록 상태를 보고 점검)</span>
+            {place ? (
+              <div className="hint" style={{ margin: 0 }}>✓ {placeName || "가게 정보"} · {new Date(place.at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} 가져옴</div>
+            ) : (
+              <div className="hint" style={{ margin: 0 }}>가게 이름을 네이버에서 검색해 가게 정보(영업시간·메뉴)가 보이는 화면에서 <b>🔍 고운 진단</b>을 누르세요. 지도(map.naver.com) 화면에서는 안 돼요.</div>
+            )}
+          </div>
+        </div>
         <div className="grid2">
           <label className="field"><span>가게 이름 (네이버 지도에 등록된 이름)</span><input type="text" value={v("name")} onChange={set("name")} placeholder="예: 맛온 막창" /></label>
           <label className="field"><span>지역 *</span><input type="text" value={v("area")} onChange={set("area")} placeholder="예: 대구 수성구" /></label>

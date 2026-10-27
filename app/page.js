@@ -40,7 +40,7 @@ export default function Home() {
     // '고운 진단' 북마크 버튼으로 넘어온 화면 받기
     consumeHashImport().then((d) => {
       if (!d) return;
-      setTab("diagnose");
+      setTab(d.kind === "place" ? "strategy" : "diagnose");
       if (d.error) alert(d.error);
       window.dispatchEvent(new Event("gms-import"));
     });

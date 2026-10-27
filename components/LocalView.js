@@ -24,6 +24,10 @@ const CSS = `
 .lc .chk{display:flex;flex-direction:column;gap:8px}
 .lc .chk>div{border-left:3px solid var(--accent);padding:4px 0 4px 12px;font-size:14px}
 .lc .chk span{display:block;color:var(--muted);font-size:13px}
+.lc .chk em{font-style:normal;font-size:11px;font-weight:800;border-radius:5px;padding:1px 7px;margin-left:6px;background:#fdf3dc;color:#8a5a00}
+.lc .chk .st-good{border-left-color:#1f8a4c} .lc .chk .st-good em{background:#e7f4ec;color:#1f7a45}
+.lc .chk .st-missing em{background:#fdeaea;color:#b4232f}
+.lc .chk .st-check{border-left-color:#c9c3b8} .lc .chk .st-check em{background:#eeeae3;color:#5c584f}
 .lc .tags{display:flex;flex-wrap:wrap;gap:6px}
 .lc .tags span{background:#fdeee8;color:var(--accent);border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700}
 .lc .tags i{font-style:normal;color:var(--muted);font-weight:600;margin-left:4px}
@@ -96,9 +100,14 @@ export default function LocalView({ r }) {
       {a.place?.length > 0 && (
         <>
           <h2>🗺️ 네이버 플레이스 점검</h2>
+          {r.placeAt ? <p className="note" style={{ marginTop: 0 }}>가게 플레이스 화면({r.placeAt})을 직접 보고 점검했어요.</p> : <p className="note" style={{ marginTop: 0 }}>플레이스 화면을 가져오지 않아 '확인해 보세요' 목록으로 정리했어요.</p>}
           <div className="chk">
             {a.place.map((p, i) => (
-              <div key={i}><b>{p.item}</b><span>{p.why}</span>{p.todo}</div>
+              <div key={i} className={`st-${p.status || "check"}`}>
+                <b>{p.item} <em>{{ good: "✓ 잘 되어 있어요", warn: "보완 추천", missing: "추가 필요", check: "확인해 보세요" }[p.status] || "확인해 보세요"}</em></b>
+                <span>{p.why}</span>
+                {p.status !== "good" && p.todo}
+              </div>
             ))}
           </div>
         </>
